@@ -12,7 +12,7 @@ static NAN_METHOD(ApiConsoleProcessList) {
     return;
   }
 
-  const SHORT pid = info[0]->Uint32Value();
+  const SHORT pid = info[0]->Uint32Value(Nan::GetCurrentContext()).FromJust();
 
   if (!FreeConsole()) {
     Nan::ThrowError("FreeConsole failed");
@@ -30,7 +30,7 @@ static NAN_METHOD(ApiConsoleProcessList) {
 
   v8::Local<v8::Array> result = Nan::New<v8::Array>();
   for (DWORD i = 0; i < processCount; i++) {
-    result->Set(i, Nan::New<v8::Number>(processList[i]));
+    Nan::Set(result, i, Nan::New<v8::Number>(processList[i]));
   }
   info.GetReturnValue().Set(result);
 }

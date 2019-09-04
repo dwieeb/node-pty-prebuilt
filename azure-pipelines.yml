@@ -7,58 +7,109 @@ jobs:
 - job: Linux
   pool:
     vmImage: 'ubuntu-16.04'
+  strategy:
+    matrix:
+      node_8_x:
+        node_version: 8.x
+      node_9_x:
+        node_version: 9.x
+      node_10_x:
+        node_version: 10.x
+      node_11_x:
+        node_version: 11.x
+      node_12_x:
+        node_version: 12.x
   steps:
   - task: NodeTool@0
     inputs:
-      versionSpec: '8.x'
+      versionSpec: $(node_version)
     displayName: 'Install Node.js'
   - script: |
-      sudo apt-get -qq install g++-multilib
       npm i
     displayName: 'Install dependencies and build'
   - script: |
-      npx prebuild --all -u $GITHUB_RELEASE_TOKEN
-      npx prebuild --all -a ia32 -u $GITHUB_RELEASE_TOKEN
-    env:
-      GITHUB_RELEASE_TOKEN: $(GITHUB_RELEASE_TOKEN)
-    displayName: 'Prebuild and publish'
+      npm test
+    displayName: 'Test'
+  - script: |
+      npm run lint
+    displayName: 'Lint'
+
 - job: macOS
   pool:
     vmImage: 'xcode9-macos10.13'
+  strategy:
+    matrix:
+      node_8_x:
+        node_version: 8.x
+      node_9_x:
+        node_version: 9.x
+      node_10_x:
+        node_version: 10.x
+      node_11_x:
+        node_version: 11.x
+      node_12_x:
+        node_version: 12.x
   steps:
   - task: NodeTool@0
     inputs:
-      versionSpec: '8.x'
+      versionSpec: $(node_version)
     displayName: 'Install Node.js'
   - script: |
       npm i
     displayName: 'Install dependencies and build'
   - script: |
-      npx prebuild --all -u $GITHUB_RELEASE_TOKEN
-    env:
-      GITHUB_RELEASE_TOKEN: $(GITHUB_RELEASE_TOKEN)
-    displayName: 'Prebuild and publish'
+      npm test
+    displayName: 'Test'
+  - script: |
+      npm run lint
+    displayName: 'Lint'
+
 - job: Windows
   pool:
     vmImage: 'vs2017-win2016'
+  strategy:
+    matrix:
+      node_8_x:
+        node_version: 8.x
+      node_9_x:
+        node_version: 9.x
+      node_10_x:
+        node_version: 10.x
+      node_11_x:
+        node_version: 11.x
+      node_12_x:
+        node_version: 12.x
+  steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: $(node_version)
+    displayName: 'Install Node.js'
+  - script: |
+      npm i
+    displayName: 'Install dependencies and build'
+  - script: |
+      npm test
+    displayName: 'Test'
+  - script: |
+      npm run lint
+    displayName: 'Lint'
+
+- job: Release
+  dependsOn:
+  - Linux
+  - macOS
+  - Windows
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+  pool:
+    vmImage: 'ubuntu-16.04'
   steps:
   - task: NodeTool@0
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '2.7'
-      architecture: 'x64'
   - script: |
       npm i
     displayName: 'Install dependencies and build'
   - script: |
-      npm config set msvs_version 2017
-    displayName: 'Use MSVC 2017'
-  - script: |
-      npx prebuild --all --include-regex "\.(node|exe|dll|pdb)$" -u %GITHUB_RELEASE_TOKEN%
-      npx prebuild --all -a ia32 --include-regex "\.(node|exe|dll|pdb)$" -u %GITHUB_RELEASE_TOKEN%
-    env:
-      GITHUB_RELEASE_TOKEN: $(GITHUB_RELEASE_TOKEN)
-    displayName: 'Prebuild and publish'
+      NPM_AUTH_TOKEN="$(NPM_AUTH_TOKEN)" node ./scripts/publish.js
+    displayName: 'Publish to npm'

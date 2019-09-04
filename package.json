@@ -1,5 +1,5 @@
 {
-  "name": "node-pty-prebuilt",
+  "name": "@dwieeb/node-pty-prebuilt",
   "description": "A parallel fork of node-pty providing prebuilt packages for Node.js and Electron",
   "author": {
     "name": "David Wilson"
